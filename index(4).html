@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Level Jeopardy</title>
+  <style>
+:root {
+  --black: #111111;
+  --white: #ffffff;
+  --gray-50: #fafafa;
+  --gray-100: #f3f3f3;
+  --gray-200: #dddddd;
+  --gray-400: #8a8a8a;
+  --gray-700: #3b3b3b;
+  --danger: #a32222;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.14);
+  --board-gap: 10px;
+}
+
+* { box-sizing: border-box; }
+html { min-height: 100%; background: var(--white); }
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--black);
+  background: var(--white);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 3px solid var(--black);
+  outline-offset: 3px;
+}
+.hidden { display: none !important; }
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.app-shell { min-height: 100vh; }
+main { padding: 72px 24px 120px; }
+
+.menu-button {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 60;
+  display: grid;
+  place-content: center;
+  gap: 5px;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--black);
+  border-radius: 50%;
+  background: var(--white);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+}
+.menu-button span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--black);
+}
+.menu-button:hover { background: var(--gray-100); }
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(2px);
+}
+.control-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 80;
+  width: min(360px, 92vw);
+  height: 100vh;
+  padding: 22px;
+  overflow-y: auto;
+  color: var(--black);
+  border-left: 1px solid var(--gray-200);
+  background: var(--white);
+  box-shadow: -20px 0 50px rgba(0, 0, 0, 0.14);
+}
+.menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.menu-header h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+.menu-close {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--black);
+  border: 1px solid var(--gray-200);
+  border-radius: 50%;
+  background: var(--white);
+  font-size: 1.5rem;
+}
+.mode-pill {
+  display: inline-flex;
+  margin-bottom: 14px;
+  padding: 6px 9px;
+  color: var(--gray-700);
+  border: 1px solid var(--gray-200);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.menu-section {
+  display: grid;
+  gap: 9px;
+  padding: 18px 0;
+  border-top: 1px solid var(--gray-200);
+}
+.menu-section:first-of-type { border-top: 0; padding-top: 0; }
+.menu-label {
+  margin: 0 0 2px;
+  color: var(--gray-400);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.button, .icon-button, .side-nav-button, .level-button {
+  border-radius: 8px;
+  font-weight: 750;
+  transition: transform 120ms ease, background 120ms ease, color 120ms ease;
+}
+.button:hover, .icon-button:hover, .side-nav-button:hover, .level-button:hover { transform: translateY(-1px); }
+.button:active, .icon-button:active, .side-nav-button:active, .level-button:active { transform: translateY(0); }
+.button {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--black);
+}
+.button-gold, .button-blue {
+  color: var(--white);
+  background: var(--black);
+}
+.button-ghost {
+  color: var(--black);
+  background: var(--white);
+}
+.button-danger {
+  color: var(--danger);
+  border-color: #d9b4b4;
+  background: #fffafa;
+}
+.menu-section .button, .file-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.board-scroll {
+  width: min(1600px, 100%);
+  margin: 0 auto;
+  overflow-x: auto;
+}
+.game-board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: var(--board-gap);
+  min-width: 780px;
+}
+.category-column {
+  display: grid;
+  grid-template-rows: 96px repeat(4, minmax(84px, 1fr));
+  gap: var(--board-gap);
+}
+.category-header, .board-tile {
+  border: 1px solid var(--black);
+  border-radius: 10px;
+}
+.category-header {
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  color: var(--white);
+  background: var(--black);
+  text-align: center;
+}
+.category-name {
+  margin: 0;
+  font-size: 0.93rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.category-name-input {
+  width: 100%;
+  padding: 9px;
+  color: var(--white);
+  border: 1px solid #777;
+  border-radius: 6px;
+  background: #222;
+  font-weight: 750;
+  text-align: center;
+}
+.board-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 84px;
+  padding: 8px;
+  color: var(--black);
+  background: var(--white);
+  font-size: clamp(1.55rem, 2.6vw, 2.5rem);
+  font-weight: 800;
+  transition: transform 120ms ease, background 120ms ease;
+}
+.board-tile:hover {
+  transform: translateY(-2px);
+  background: var(--gray-100);
+}
+.board-tile .tile-state { display: none; }
+.board-tile.in-progress { flex-direction: column; gap: 3px; }
+.board-tile.in-progress .tile-value { font-size: 1.15rem; }
+.board-tile.in-progress .tile-state {
+  display: block;
+  color: var(--gray-700);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+.board-tile.completed {
+  color: var(--gray-400);
+  border-color: var(--gray-200);
+  background: var(--gray-100);
+  cursor: not-allowed;
+}
+.board-tile.completed .tile-value { display: none; }
+.board-tile.completed .tile-state {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+.board-tile.has-content::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--black);
+}
+body[data-mode="play"] .board-tile.has-content::after { display: none; }
+
+body.question-open { overflow: hidden; }
+body.question-open .menu-button { display: none; }
+.question-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: block;
+  padding: 0;
+  background: var(--white);
+}
+.question-dialog {
+  position: relative;
+  display: grid;
+  grid-template-columns: 205px minmax(0, 1fr);
+  width: 100%;
+  height: 100vh;
+  max-height: none;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: var(--white);
+  box-shadow: none;
+}
+.modal-close {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--white);
+  border: 1px solid #555;
+  border-radius: 50%;
+  background: var(--black);
+  font-size: 1.65rem;
+  line-height: 1;
+}
+.modal-close:hover { background: #2a2a2a; }
+.level-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 78px 14px 112px;
+  overflow-y: auto;
+  color: var(--white);
+  background: var(--black);
+}
+.selected-tile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 70px;
+  padding: 12px;
+  border: 1px solid #555;
+  border-radius: 8px;
+}
+.selected-tile-meta span {
+  color: #bdbdbd;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.selected-tile-meta strong { color: var(--white); font-size: 1.35rem; }
+.side-nav-button, .level-button {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px;
+  color: var(--white);
+  border: 1px solid #555;
+  background: #191919;
+}
+.side-nav-button:disabled { opacity: 0.35; cursor: not-allowed; }
+.level-buttons { display: grid; gap: 9px; margin: auto 0; }
+.level-button { min-height: 62px; text-align: left; }
+.level-button span {
+  display: block;
+  color: #999;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.level-button strong { display: block; margin-top: 3px; font-size: 1rem; }
+.level-button.active { color: var(--black); border-color: var(--white); background: var(--white); }
+.level-button.active span { color: var(--gray-700); }
+.level-button.has-level-content:not(.active)::after {
+  content: "•";
+  float: right;
+  margin-top: -22px;
+  color: var(--white);
+  font-size: 1.2rem;
+}
+.question-content {
+  min-width: 0;
+  padding: clamp(24px, 4vw, 50px);
+  padding-bottom: 130px;
+  overflow-y: auto;
+  background: var(--white);
+}
+.question-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-right: 42px;
+  margin-bottom: 24px;
+}
+.level-badge, .answer-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 9px;
+  color: var(--white);
+  border-radius: 999px;
+  background: var(--black);
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.11em;
+}
+.save-status { color: var(--gray-400); font-size: 0.82rem; font-weight: 700; }
+.field-group { display: grid; gap: 7px; margin-bottom: 18px; }
+.field-group label {
+  color: var(--black);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.field-group textarea, .field-group input, .field-group select {
+  width: 100%;
+  color: var(--black);
+  border: 1px solid #bcbcbc;
+  border-radius: 8px;
+  background: var(--white);
+}
+.field-group textarea { min-height: 110px; padding: 14px; resize: vertical; line-height: 1.5; }
+.field-group input, .field-group select { min-height: 44px; padding: 9px 11px; }
+.field-group input::placeholder, .field-group textarea::placeholder { color: #999; }
+.media-editor {
+  display: grid;
+  grid-template-columns: 150px minmax(220px, 1fr) minmax(170px, 0.55fr);
+  gap: 12px;
+}
+.field-help { margin: -6px 0 16px; color: var(--gray-700); font-size: 0.8rem; line-height: 1.4; }
+.field-help code { color: var(--black); }
+.media-preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 10px;
+}
+.media-preview:not(:empty) {
+  min-height: 220px;
+  margin-bottom: 20px;
+  border: 1px solid var(--gray-200);
+  background: var(--gray-50);
+}
+.media-preview img, .media-preview video, .media-preview iframe {
+  display: block;
+  width: 100%;
+  max-height: 410px;
+  border: 0;
+  object-fit: contain;
+}
+.media-preview iframe { aspect-ratio: 16 / 9; }
+.media-error { padding: 24px; color: var(--danger); line-height: 1.5; text-align: center; }
+.editor-actions, .player-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+}
+.player-view { display: grid; min-height: 530px; align-content: center; text-align: center; }
+.player-question {
+  max-width: 930px;
+  margin: 0 auto 24px;
+  font-size: clamp(1.8rem, 4.8vw, 4rem);
+  font-weight: 750;
+  line-height: 1.18;
+  letter-spacing: -0.035em;
+  white-space: pre-wrap;
+}
+.player-media:not(:empty) { width: min(820px, 100%); margin: 0 auto 24px; }
+.answer-panel {
+  width: min(880px, 100%);
+  margin: 18px auto 0;
+  padding: 22px;
+  border: 1px solid var(--black);
+  border-radius: 10px;
+  background: var(--gray-50);
+}
+.answer-panel p {
+  margin: 14px 0 0;
+  color: var(--black);
+  font-size: clamp(1.35rem, 3.2vw, 2.4rem);
+  line-height: 1.3;
+  white-space: pre-wrap;
+}
+.player-actions { justify-content: center; margin-top: 30px; }
+body[data-mode="edit"] .player-view { display: none; }
+body[data-mode="play"] .edit-only, body[data-mode="play"] .editor-view { display: none !important; }
+
+.audio-player {
+  display: grid;
+  place-items: center;
+  min-height: 230px;
+}
+.audio-play-button {
+  display: grid;
+  place-items: center;
+  width: 150px;
+  height: 150px;
+  padding: 0;
+  color: var(--white);
+  border: 0;
+  border-radius: 50%;
+  background: var(--black);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
+  transition: transform 150ms ease, background 150ms ease;
+}
+.audio-play-button:hover { transform: scale(1.04); background: #292929; }
+.audio-play-button:active { transform: scale(0.98); }
+.audio-play-button svg { width: 72px; height: 72px; fill: currentColor; }
+.audio-play-button.is-playing { animation: soundPulse 1.15s ease-in-out infinite; }
+@keyframes soundPulse {
+  0%, 100% { box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16), 0 0 0 0 rgba(0,0,0,.13); }
+  50% { box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16), 0 0 0 18px rgba(0,0,0,0); }
+}
+.editor-audio { width: min(620px, 92%); }
+
+.team-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 130;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 82px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  border-top: 1px solid var(--black);
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(10px);
+}
+.team-dock.no-teams {
+  left: 16px;
+  right: auto;
+  bottom: 16px;
+  min-height: auto;
+  width: auto;
+  padding: 7px;
+  overflow: visible;
+  border: 1px solid var(--black);
+  border-radius: 999px;
+}
+.team-controls {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--white);
+}
+.team-button, .score-button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--black);
+  border: 1px solid var(--black);
+  border-radius: 50%;
+  background: var(--white);
+  font-weight: 850;
+  line-height: 1;
+}
+.team-button { width: 34px; height: 34px; font-size: 1.2rem; }
+.team-button:hover, .score-button:hover { color: var(--white); background: var(--black); }
+.team-button:disabled { opacity: .3; cursor: not-allowed; }
+.team-count {
+  min-width: 52px;
+  color: var(--gray-700);
+  font-size: .7rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.teams-list { display: flex; gap: 9px; min-width: 0; }
+.team-card {
+  display: grid;
+  grid-template-columns: minmax(88px, 118px) auto;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-width: 220px;
+  padding: 8px 9px;
+  border: 1px solid var(--black);
+  border-radius: 10px;
+  background: var(--white);
+}
+.team-name-input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--gray-200);
+  background: transparent;
+  font-size: .82rem;
+  font-weight: 800;
+  text-align: center;
+}
+.team-score-controls { display: flex; align-items: center; gap: 6px; }
+.score-button { width: 28px; height: 28px; font-size: 1rem; }
+.team-score {
+  min-width: 58px;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+  text-align: center;
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 200;
+  max-width: min(560px, calc(100vw - 30px));
+  padding: 11px 16px;
+  color: var(--white);
+  border-radius: 999px;
+  background: var(--black);
+  box-shadow: 0 12px 30px rgba(0,0,0,.2);
+  font-weight: 750;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 16px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.toast.visible { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 1000px) {
+  .question-dialog { grid-template-columns: 170px minmax(0, 1fr); }
+  .media-editor { grid-template-columns: 1fr; gap: 0; }
+}
+@media (max-width: 720px) {
+  main { padding: 78px 12px 110px; }
+  .menu-button { top: 14px; right: 14px; }
+  .question-modal { padding: 0; }
+  .modal-close { top: 12px; left: 12px; }
+  .question-dialog {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-height: 100vh;
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+  }
+  .level-sidebar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    padding: 11px 11px 11px 64px;
+    overflow: visible;
+  }
+  .selected-tile-meta { display: none; }
+  .level-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 0; }
+  .level-button { min-height: 50px; padding: 6px; text-align: center; }
+  .level-button span, .level-button.has-level-content:not(.active)::after { display: none; }
+  .side-nav-button { width: auto; min-height: 50px; font-size: 0; }
+  .side-nav-button:first-of-type::after { content: "←"; font-size: 1.2rem; }
+  .side-nav-button:last-of-type::after { content: "→"; font-size: 1.2rem; }
+  .question-content { padding: 22px 17px 128px; }
+  .player-view { min-height: 470px; }
+  .editor-actions, .player-actions { flex-direction: column; }
+  .editor-actions .button, .player-actions .button { width: 100%; }
+  .team-dock { min-height: 76px; padding: 8px 10px; }
+  .team-dock.no-teams { left: 10px; bottom: 10px; }
+  .team-card { min-width: 205px; }
+  .audio-play-button { width: 126px; height: 126px; }
+  .audio-play-button svg { width: 60px; height: 60px; }
+}
+</style>
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <button class="menu-button" id="menuButton" type="button" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+
+    <div class="menu-backdrop hidden" id="menuBackdrop"></div>
+
+    <aside class="control-menu hidden" id="controlMenu" aria-label="Game controls">
+      <div class="menu-header">
+        <h1>Level Jeopardy</h1>
+        <button class="menu-close" id="menuCloseButton" type="button" aria-label="Close menu">×</button>
+      </div>
+
+      <span class="mode-pill" id="modePill">Play mode</span>
+
+      <section class="menu-section">
+        <p class="menu-label">Mode</p>
+        <button class="button button-gold" id="completeModeButton" type="button">Play Mode</button>
+        <button class="button button-ghost" id="editModeButton" type="button">Edit Questions</button>
+      </section>
+
+      <section class="menu-section">
+        <p class="menu-label">Game</p>
+        <button class="button button-ghost" id="saveGameButton" type="button">Save Now</button>
+        <button class="button button-ghost" id="exportButton" type="button">Export Game</button>
+        <label class="button button-ghost file-button" for="importInput">Import Game</label>
+        <input id="importInput" class="visually-hidden" type="file" accept="application/json,.json" />
+        <button class="button button-ghost" id="resetProgressButton" type="button">Reset Progress</button>
+        <button class="button button-ghost" id="muteButton" type="button">Mute Music</button>
+      </section>
+    </aside>
+
+    <main>
+      <div class="board-scroll" aria-label="Level Jeopardy game board">
+        <section class="game-board" id="gameBoard"></section>
+      </div>
+    </main>
+  </div>
+
+  <section class="question-modal hidden" id="questionModal" role="dialog" aria-modal="true" aria-labelledby="modalQuestionTitle">
+    <div class="question-dialog">
+      <button class="modal-close" id="modalClose" type="button" aria-label="Back to board" title="Back to board">←</button>
+
+      <aside class="level-sidebar" aria-label="Level navigation">
+        <div class="selected-tile-meta">
+          <span id="selectedCategory">CATEGORY</span>
+          <strong id="selectedValue">1</strong>
+        </div>
+
+        <button class="side-nav-button" id="previousLevelButton" type="button">← Previous</button>
+
+        <div class="level-buttons" id="levelButtons"></div>
+
+        <button class="side-nav-button" id="nextLevelButton" type="button">Next →</button>
+      </aside>
+
+      <article class="question-content">
+        <div class="question-topline">
+          <span class="level-badge" id="levelBadge">LEVEL 1</span>
+          <span class="save-status edit-only" id="saveStatus">Saved</span>
+        </div>
+
+        <section class="editor-view edit-only" id="editorView">
+          <div class="field-group">
+            <label for="questionInput">Question</label>
+            <textarea id="questionInput" rows="6" placeholder="Type the Level 1 question here..."></textarea>
+          </div>
+
+          <div class="field-group">
+            <label for="answerInput">Answer</label>
+            <textarea id="answerInput" rows="4" placeholder="Type the answer here..."></textarea>
+          </div>
+
+          <div class="media-editor">
+            <div class="field-group compact-field">
+              <label for="mediaTypeInput">Media type</label>
+              <select id="mediaTypeInput">
+                <option value="none">No media</option>
+                <option value="image">Image</option>
+                <option value="video">Video</option>
+                <option value="audio">Sound</option>
+                <option value="youtube">YouTube video</option>
+              </select>
+            </div>
+
+            <div class="field-group media-url-field">
+              <label for="mediaUrlInput">Image, video, or sound URL / file path</label>
+              <input id="mediaUrlInput" type="text" placeholder="Example: media/noah.jpg or https://..." />
+            </div>
+
+            <div class="field-group compact-field">
+              <label for="mediaUploadInput">Or upload</label>
+              <input id="mediaUploadInput" type="file" accept="image/*,video/*,audio/*" />
+            </div>
+          </div>
+
+          <p class="field-help">Use a URL, a GitHub file path, or upload a small image, video, or sound file.</p>
+
+          <div class="media-preview edit-media-preview" id="editMediaPreview"></div>
+
+          <div class="editor-actions">
+            <button class="button button-danger" id="clearLevelButton" type="button">Clear This Level</button>
+            <button class="button button-gold" id="saveLevelButton" type="button">Save Level</button>
+          </div>
+        </section>
+
+        <section class="player-view" id="playerView">
+          <h2 class="player-question" id="modalQuestionTitle">Question</h2>
+          <div class="media-preview player-media" id="playerMedia"></div>
+
+          <div class="answer-panel hidden" id="answerPanel">
+            <span class="answer-label">ANSWER</span>
+            <p id="playerAnswer"></p>
+          </div>
+
+          <div class="player-actions">
+            <button class="button button-gold" id="showAnswerButton" type="button">Show Answer</button>
+            <button class="button button-blue" id="finishQuestionButton" type="button">Mark Question Complete</button>
+          </div>
+        </section>
+      </article>
+    </div>
+  </section>
+
+  <section class="team-dock no-teams" id="teamDock" aria-label="Team scoreboard">
+    <div class="team-controls">
+      <button class="team-button" id="removeTeamButton" type="button" aria-label="Remove last team" title="Remove last team">−</button>
+      <span class="team-count" id="teamCount">Teams</span>
+      <button class="team-button" id="addTeamButton" type="button" aria-label="Add team" title="Add team">+</button>
+    </div>
+    <div class="teams-list" id="teamsList"></div>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+"use strict";
+
+const STORAGE_KEY = "levelJeopardyGameV1";
+const MODE_KEY = "levelJeopardyModeV1";
+const TEAM_STORAGE_KEY = "levelJeopardyTeamsV1";
+const MAX_TEAMS = 8;
+const SCORE_STEP = 25;
+const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
+
+const QUESTIONS_PER_CATEGORY = 4;
+const LEVELS_PER_QUESTION = 4;
+
+const categoryDefinitions = [
+  {
+    name: "Bible Verse",
+    legacyIndex: 0,
+    prompts: [
+      "Old or New Testament?",
+      "Which Book?",
+      "Which Chapter?",
+      "Which Verse?"
+    ]
+  },
+  {
+    name: "Geography",
+    legacyIndex: 1,
+    prompts: [
+      "Which Continent?",
+      "Which Country?",
+      "Which City?",
+      "Which Landmark?"
+    ]
+  },
+  {
+    name: "Sports",
+    legacyIndex: 3,
+    prompts: [
+      "Which Sport?",
+      "Which League?",
+      "Which Team?",
+      "Which Player?"
+    ]
+  },
+  {
+    name: "Food",
+    legacyIndex: 4,
+    prompts: [
+      "Which Cuisine?",
+      "Which Country?",
+      "Which Dish?",
+      "Which Ingredient?"
+    ]
+  },
+  {
+    name: "General Knowledge",
+    legacyIndex: 6,
+    prompts: ["", "", "", ""]
+  }
+];
+
+const elements = {
+  body: document.body,
+  gameBoard: document.getElementById("gameBoard"),
+  menuButton: document.getElementById("menuButton"),
+  menuBackdrop: document.getElementById("menuBackdrop"),
+  controlMenu: document.getElementById("controlMenu"),
+  menuCloseButton: document.getElementById("menuCloseButton"),
+  completeModeButton: document.getElementById("completeModeButton"),
+  editModeButton: document.getElementById("editModeButton"),
+  modePill: document.getElementById("modePill"),
+  saveGameButton: document.getElementById("saveGameButton"),
+  exportButton: document.getElementById("exportButton"),
+  importInput: document.getElementById("importInput"),
+  resetProgressButton: document.getElementById("resetProgressButton"),
+  muteButton: document.getElementById("muteButton"),
+  questionModal: document.getElementById("questionModal"),
+  modalClose: document.getElementById("modalClose"),
+  selectedCategory: document.getElementById("selectedCategory"),
+  selectedValue: document.getElementById("selectedValue"),
+  levelBadge: document.getElementById("levelBadge"),
+  levelButtons: document.getElementById("levelButtons"),
+  previousLevelButton: document.getElementById("previousLevelButton"),
+  nextLevelButton: document.getElementById("nextLevelButton"),
+  questionInput: document.getElementById("questionInput"),
+  answerInput: document.getElementById("answerInput"),
+  mediaTypeInput: document.getElementById("mediaTypeInput"),
+  mediaUrlInput: document.getElementById("mediaUrlInput"),
+  mediaUploadInput: document.getElementById("mediaUploadInput"),
+  editMediaPreview: document.getElementById("editMediaPreview"),
+  saveLevelButton: document.getElementById("saveLevelButton"),
+  clearLevelButton: document.getElementById("clearLevelButton"),
+  saveStatus: document.getElementById("saveStatus"),
+  modalQuestionTitle: document.getElementById("modalQuestionTitle"),
+  playerAnswer: document.getElementById("playerAnswer"),
+  playerMedia: document.getElementById("playerMedia"),
+  answerPanel: document.getElementById("answerPanel"),
+  showAnswerButton: document.getElementById("showAnswerButton"),
+  finishQuestionButton: document.getElementById("finishQuestionButton"),
+  teamDock: document.getElementById("teamDock"),
+  teamsList: document.getElementById("teamsList"),
+  teamCount: document.getElementById("teamCount"),
+  addTeamButton: document.getElementById("addTeamButton"),
+  removeTeamButton: document.getElementById("removeTeamButton"),
+  toast: document.getElementById("toast")
+};
+
+let gameData = createDefaultGame();
+let currentMode = "";
+let selectedCategoryIndex = 0;
+let selectedQuestionIndex = 0;
+let selectedLevelIndex = 0;
+let saveTimer = null;
+let toastTimer = null;
+let teams = [];
+
+let audioContext = null;
+let masterGain = null;
+let musicTimer = null;
+let musicStep = 0;
+let isMuted = false;
+
+function createEmptyLevel(question = "") {
+  return {
+    question,
+    answer: "",
+    media: {
+      type: "none",
+      src: ""
+    }
+  };
+}
+
+function createDefaultGame() {
+  return {
+    version: 2,
+    title: "Level Jeopardy",
+    categories: categoryDefinitions.map((definition, categoryIndex) => ({
+      id: `category-${categoryIndex + 1}`,
+      name: definition.name,
+      questions: Array.from({ length: QUESTIONS_PER_CATEGORY }, (_, questionIndex) => ({
+        id: `category-${categoryIndex + 1}-question-${questionIndex + 1}`,
+        value: questionIndex + 1,
+        currentLevel: 0,
+        completed: false,
+        levels: Array.from({ length: LEVELS_PER_QUESTION }, (_, levelIndex) =>
+          createEmptyLevel(definition.prompts[levelIndex] ?? "")
+        )
+      }))
+    }))
+  };
+}
+
+function normalizeLevel(level, fallbackQuestion = "", shouldPrefillLegacyBlank = false) {
+  const normalized = {
+    question: typeof level?.question === "string" ? level.question : fallbackQuestion,
+    answer: typeof level?.answer === "string" ? level.answer : "",
+    media: {
+      type: ["none", "image", "video", "audio", "youtube"].includes(level?.media?.type)
+        ? level.media.type
+        : "none",
+      src: typeof level?.media?.src === "string" ? level.media.src : ""
+    }
+  };
+
+  const levelIsBlank =
+    !normalized.question.trim() &&
+    !normalized.answer.trim() &&
+    normalized.media.type === "none" &&
+    !normalized.media.src;
+
+  if (shouldPrefillLegacyBlank && levelIsBlank) {
+    normalized.question = fallbackQuestion;
+  }
+
+  return normalized;
+}
+
+function normalizeGameData(input) {
+  const fallback = createDefaultGame();
+  const incomingCategories = Array.isArray(input?.categories) ? input.categories : [];
+  const isCurrentFormat = Number(input?.version) >= 2;
+
+  const categories = categoryDefinitions.map((definition, categoryIndex) => {
+    let incomingCategory;
+
+    if (isCurrentFormat) {
+      incomingCategory = incomingCategories[categoryIndex] ?? {};
+    } else {
+      const matchingCategory = incomingCategories.find((category) =>
+        typeof category?.name === "string" &&
+        category.name.trim().toLowerCase() === definition.name.toLowerCase()
+      );
+      incomingCategory = matchingCategory ?? incomingCategories[definition.legacyIndex] ?? {};
+    }
+
+    return {
+      id: typeof incomingCategory.id === "string" ? incomingCategory.id : fallback.categories[categoryIndex].id,
+      name:
+        typeof incomingCategory.name === "string" && incomingCategory.name.trim()
+          ? incomingCategory.name.trim()
+          : fallback.categories[categoryIndex].name,
+      questions: Array.from({ length: QUESTIONS_PER_CATEGORY }, (_, questionIndex) => {
+        const incomingQuestion = incomingCategory?.questions?.[questionIndex] ?? {};
+        return {
+          id:
+            typeof incomingQuestion.id === "string"
+              ? incomingQuestion.id
+              : fallback.categories[categoryIndex].questions[questionIndex].id,
+          value: questionIndex + 1,
+          currentLevel: clampNumber(incomingQuestion.currentLevel, 0, LEVELS_PER_QUESTION - 1, 0),
+          completed: Boolean(incomingQuestion.completed),
+          levels: Array.from({ length: LEVELS_PER_QUESTION }, (_, levelIndex) =>
+            normalizeLevel(
+              incomingQuestion?.levels?.[levelIndex],
+              definition.prompts[levelIndex] ?? "",
+              !isCurrentFormat
+            )
+          )
+        };
+      })
+    };
+  });
+
+  return {
+    version: 2,
+    title: typeof input?.title === "string" ? input.title : "Level Jeopardy",
+    categories
+  };
+}
+
+function clampNumber(value, minimum, maximum, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(maximum, Math.max(minimum, Math.round(number)));
+}
+
+async function loadGameData() {
+  let publishedData = null;
+
+  try {
+    const response = await fetch("game-data.json", { cache: "no-store" });
+    if (response.ok) {
+      publishedData = await response.json();
+    }
+  } catch (error) {
+    // Opening the site directly from a computer can block fetch. The built-in defaults still work.
+  }
+
+  const savedData = localStorage.getItem(STORAGE_KEY);
+  if (savedData) {
+    try {
+      gameData = normalizeGameData(JSON.parse(savedData));
+      return;
+    } catch (error) {
+      localStorage.removeItem(STORAGE_KEY);
+      showToast("The saved game was damaged, so the published copy was loaded instead.");
+    }
+  }
+
+  gameData = normalizeGameData(publishedData ?? createDefaultGame());
+}
+
+function saveGameData(options = {}) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(gameData));
+    elements.saveStatus.textContent = "Saved";
+    if (options.toast) showToast("Game saved.");
+  } catch (error) {
+    elements.saveStatus.textContent = "Storage full";
+    showToast("Browser storage is full. Export your game, then use smaller media files or URL paths.");
+  }
+}
+
+function scheduleSave() {
+  elements.saveStatus.textContent = "Saving…";
+  window.clearTimeout(saveTimer);
+  saveTimer = window.setTimeout(() => saveGameData(), 350);
+}
+
+function normalizeTeams(input) {
+  if (!Array.isArray(input)) return [];
+  return input.slice(0, MAX_TEAMS).map((team, index) => ({
+    id: typeof team?.id === "string" ? team.id : `team-${Date.now()}-${index}`,
+    name: typeof team?.name === "string" && team.name.trim() ? team.name.trim().slice(0, 24) : `Team ${index + 1}`,
+    score: Number.isFinite(Number(team?.score)) ? Math.round(Number(team.score) / SCORE_STEP) * SCORE_STEP : 0
+  }));
+}
+
+function loadTeams() {
+  try {
+    const saved = localStorage.getItem(TEAM_STORAGE_KEY);
+    teams = saved ? normalizeTeams(JSON.parse(saved)) : [];
+  } catch (error) {
+    teams = [];
+    localStorage.removeItem(TEAM_STORAGE_KEY);
+  }
+  renderTeams();
+}
+
+function saveTeams() {
+  try {
+    localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(teams));
+  } catch (error) {
+    showToast("Team scores could not be saved in this browser.");
+  }
+}
+
+function renderTeams() {
+  elements.teamsList.replaceChildren();
+  elements.teamDock.classList.toggle("no-teams", teams.length === 0);
+  elements.teamCount.textContent = teams.length ? `${teams.length}/${MAX_TEAMS}` : "Teams";
+  elements.removeTeamButton.disabled = teams.length === 0;
+  elements.addTeamButton.disabled = teams.length >= MAX_TEAMS;
+
+  teams.forEach((team, index) => {
+    const card = document.createElement("article");
+    card.className = "team-card";
+
+    const nameInput = document.createElement("input");
+    nameInput.className = "team-name-input";
+    nameInput.type = "text";
+    nameInput.value = team.name;
+    nameInput.maxLength = 24;
+    nameInput.setAttribute("aria-label", `Team ${index + 1} name`);
+    nameInput.addEventListener("input", () => {
+      team.name = nameInput.value;
+      saveTeams();
+    });
+    nameInput.addEventListener("blur", () => {
+      team.name = nameInput.value.trim() || `Team ${index + 1}`;
+      nameInput.value = team.name;
+      saveTeams();
+    });
+
+    const scoreControls = document.createElement("div");
+    scoreControls.className = "team-score-controls";
+
+    const subtractButton = document.createElement("button");
+    subtractButton.className = "score-button";
+    subtractButton.type = "button";
+    subtractButton.textContent = "−";
+    subtractButton.setAttribute("aria-label", `Subtract ${SCORE_STEP} points from ${team.name}`);
+    subtractButton.addEventListener("click", () => updateTeamScore(index, -SCORE_STEP));
+
+    const score = document.createElement("strong");
+    score.className = "team-score";
+    score.textContent = String(team.score);
+
+    const addButton = document.createElement("button");
+    addButton.className = "score-button";
+    addButton.type = "button";
+    addButton.textContent = "+";
+    addButton.setAttribute("aria-label", `Add ${SCORE_STEP} points to ${team.name}`);
+    addButton.addEventListener("click", () => updateTeamScore(index, SCORE_STEP));
+
+    scoreControls.append(subtractButton, score, addButton);
+    card.append(nameInput, scoreControls);
+    elements.teamsList.append(card);
+  });
+}
+
+function addTeam() {
+  if (teams.length >= MAX_TEAMS) {
+    showToast("The team limit is 8.");
+    return;
+  }
+
+  teams.push({
+    id: `team-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    name: `Team ${teams.length + 1}`,
+    score: 0
+  });
+  saveTeams();
+  renderTeams();
+}
+
+function removeTeam() {
+  if (!teams.length) return;
+  teams.pop();
+  saveTeams();
+  renderTeams();
+}
+
+function updateTeamScore(teamIndex, amount) {
+  const team = teams[teamIndex];
+  if (!team) return;
+  team.score += amount;
+  saveTeams();
+  renderTeams();
+}
+
+function getSelectedQuestion() {
+  return gameData.categories[selectedCategoryIndex].questions[selectedQuestionIndex];
+}
+
+function getSelectedLevel() {
+  return getSelectedQuestion().levels[selectedLevelIndex];
+}
+
+function levelHasContent(level) {
+  return Boolean(level.question.trim() || level.answer.trim() || (level.media.type !== "none" && level.media.src));
+}
+
+function questionHasContent(question) {
+  return question.levels.some(levelHasContent);
+}
+
+function renderBoard() {
+  elements.gameBoard.replaceChildren();
+
+  gameData.categories.forEach((category, categoryIndex) => {
+    const column = document.createElement("div");
+    column.className = "category-column";
+
+    const header = document.createElement("div");
+    header.className = "category-header";
+
+    if (currentMode === "edit") {
+      const input = document.createElement("input");
+      input.className = "category-name-input";
+      input.type = "text";
+      input.value = category.name;
+      input.maxLength = 40;
+      input.setAttribute("aria-label", `Edit category ${categoryIndex + 1} name`);
+      input.addEventListener("input", () => {
+        category.name = input.value || `Category ${categoryIndex + 1}`;
+        scheduleSave();
+      });
+      input.addEventListener("blur", () => {
+        category.name = input.value.trim() || `Category ${categoryIndex + 1}`;
+        input.value = category.name;
+        saveGameData();
+      });
+      header.append(input);
+    } else {
+      const title = document.createElement("h2");
+      title.className = "category-name";
+      title.textContent = category.name;
+      header.append(title);
+    }
+
+    column.append(header);
+
+    category.questions.forEach((question, questionIndex) => {
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "board-tile";
+      tile.dataset.categoryIndex = String(categoryIndex);
+      tile.dataset.questionIndex = String(questionIndex);
+      tile.setAttribute("aria-label", `${category.name}, question ${question.value}`);
+
+      if (question.completed) tile.classList.add("completed");
+      if (!question.completed && question.currentLevel > 0) tile.classList.add("in-progress");
+      if (questionHasContent(question)) tile.classList.add("has-content");
+
+      const value = document.createElement("span");
+      value.className = "tile-value";
+      value.textContent = String(question.value);
+
+      const state = document.createElement("span");
+      state.className = "tile-state";
+      state.textContent = question.completed ? "DONE" : `LEVEL ${question.currentLevel + 1}`;
+
+      tile.append(value, state);
+      tile.addEventListener("click", () => openQuestion(categoryIndex, questionIndex));
+      column.append(tile);
+    });
+
+    elements.gameBoard.append(column);
+  });
+}
+
+function openMenu() {
+  elements.controlMenu.classList.remove("hidden");
+  elements.menuBackdrop.classList.remove("hidden");
+  elements.menuButton.setAttribute("aria-expanded", "true");
+  elements.menuCloseButton.focus();
+}
+
+function closeMenu() {
+  elements.controlMenu.classList.add("hidden");
+  elements.menuBackdrop.classList.add("hidden");
+  elements.menuButton.setAttribute("aria-expanded", "false");
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  localStorage.setItem(MODE_KEY, mode);
+  elements.body.dataset.mode = mode;
+  elements.modePill.textContent = mode === "edit" ? "Edit mode" : "Play mode";
+  renderBoard();
+  closeMenu();
+  startMusic();
+}
+
+function openQuestion(categoryIndex, questionIndex) {
+  const question = gameData.categories[categoryIndex].questions[questionIndex];
+
+  if (currentMode === "play" && question.completed) {
+    showToast("That question is already complete. Reset progress to use it again.");
+    return;
+  }
+
+  selectedCategoryIndex = categoryIndex;
+  selectedQuestionIndex = questionIndex;
+  selectedLevelIndex = currentMode === "play" ? question.currentLevel : 0;
+
+  elements.questionModal.classList.remove("hidden");
+  elements.body.classList.add("question-open");
+  renderQuestionModal();
+  elements.modalClose.focus();
+}
+
+function closeQuestion() {
+  if (currentMode === "edit") saveCurrentEditorFields();
+  elements.questionModal.classList.add("hidden");
+  elements.body.classList.remove("question-open");
+  renderBoard();
+}
+
+function renderQuestionModal() {
+  const category = gameData.categories[selectedCategoryIndex];
+  const question = getSelectedQuestion();
+
+  elements.selectedCategory.textContent = category.name;
+  elements.selectedValue.textContent = String(question.value);
+  elements.levelBadge.textContent = `LEVEL ${selectedLevelIndex + 1}`;
+  elements.previousLevelButton.disabled = selectedLevelIndex === 0;
+  elements.nextLevelButton.disabled = selectedLevelIndex === LEVELS_PER_QUESTION - 1;
+
+  renderLevelButtons();
+
+  if (currentMode === "edit") {
+    loadEditorFields();
+  } else {
+    renderPlayerLevel();
+  }
+}
+
+function renderLevelButtons() {
+  const question = getSelectedQuestion();
+  elements.levelButtons.replaceChildren();
+
+  question.levels.forEach((level, levelIndex) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "level-button";
+    if (levelIndex === selectedLevelIndex) button.classList.add("active");
+    if (levelHasContent(level)) button.classList.add("has-level-content");
+
+    const small = document.createElement("span");
+    small.textContent = "Question stage";
+    const strong = document.createElement("strong");
+    strong.textContent = `Level ${levelIndex + 1}`;
+    button.append(small, strong);
+
+    button.addEventListener("click", () => changeLevel(levelIndex));
+    elements.levelButtons.append(button);
+  });
+}
+
+function changeLevel(levelIndex) {
+  if (levelIndex === selectedLevelIndex) return;
+  if (currentMode === "edit") saveCurrentEditorFields();
+
+  selectedLevelIndex = clampNumber(levelIndex, 0, LEVELS_PER_QUESTION - 1, selectedLevelIndex);
+
+  if (currentMode === "play") {
+    const question = getSelectedQuestion();
+    question.currentLevel = selectedLevelIndex;
+    saveGameData();
+  }
+
+  renderQuestionModal();
+}
+
+function loadEditorFields() {
+  const level = getSelectedLevel();
+  elements.questionInput.value = level.question;
+  elements.answerInput.value = level.answer;
+  elements.mediaTypeInput.value = level.media.type;
+  elements.mediaUrlInput.value = level.media.src;
+  elements.mediaUploadInput.value = "";
+  renderMedia(elements.editMediaPreview, level.media, false);
+  elements.saveStatus.textContent = "Saved";
+}
+
+function saveCurrentEditorFields(options = {}) {
+  if (currentMode !== "edit") return;
+
+  const level = getSelectedLevel();
+  level.question = elements.questionInput.value;
+  level.answer = elements.answerInput.value;
+  level.media.type = elements.mediaTypeInput.value;
+  level.media.src = elements.mediaTypeInput.value === "none" ? "" : elements.mediaUrlInput.value.trim();
+
+  saveGameData({ toast: options.toast });
+  renderLevelButtons();
+}
+
+function handleEditorInput() {
+  const level = getSelectedLevel();
+  level.question = elements.questionInput.value;
+  level.answer = elements.answerInput.value;
+  level.media.type = elements.mediaTypeInput.value;
+  level.media.src = elements.mediaTypeInput.value === "none" ? "" : elements.mediaUrlInput.value.trim();
+  renderMedia(elements.editMediaPreview, level.media, false);
+  renderLevelButtons();
+  scheduleSave();
+}
+
+function clearCurrentLevel() {
+  const confirmed = window.confirm(`Clear all text and media from Level ${selectedLevelIndex + 1}?`);
+  if (!confirmed) return;
+
+  getSelectedQuestion().levels[selectedLevelIndex] = createEmptyLevel();
+  saveGameData();
+  loadEditorFields();
+  renderLevelButtons();
+  showToast(`Level ${selectedLevelIndex + 1} cleared.`);
+}
+
+function handleMediaUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > MAX_UPLOAD_BYTES) {
+    event.target.value = "";
+    showToast("That file is over 3 MB. Add it to the GitHub media folder and use its file path instead.");
+    return;
+  }
+
+  const fileType = file.type.startsWith("image/")
+    ? "image"
+    : file.type.startsWith("video/")
+      ? "video"
+      : file.type.startsWith("audio/")
+        ? "audio"
+        : "none";
+  if (fileType === "none") {
+    event.target.value = "";
+    showToast("Please choose an image, video, or sound file.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    elements.mediaTypeInput.value = fileType;
+    elements.mediaUrlInput.value = String(reader.result ?? "");
+    handleEditorInput();
+    showToast(`${file.name} added to this level.`);
+  });
+  reader.addEventListener("error", () => showToast("The media file could not be read."));
+  reader.readAsDataURL(file);
+}
+
+function renderPlayerLevel() {
+  const level = getSelectedLevel();
+  const question = getSelectedQuestion();
+
+  const questionText = level.question.trim();
+  const hasMedia = level.media.type !== "none" && Boolean(level.media.src);
+  elements.modalQuestionTitle.textContent = questionText || (hasMedia ? "" : "This level has not been written yet.");
+  elements.modalQuestionTitle.classList.toggle("hidden", !questionText && hasMedia);
+  elements.playerAnswer.textContent = level.answer.trim() || "No answer has been entered.";
+  elements.answerPanel.classList.add("hidden");
+  elements.showAnswerButton.textContent = "Show Answer";
+  renderMedia(elements.playerMedia, level.media, true);
+
+  elements.finishQuestionButton.textContent =
+    selectedLevelIndex === LEVELS_PER_QUESTION - 1 ? "Mark Question Complete" : "Go to Next Level";
+  elements.finishQuestionButton.disabled = false;
+  question.currentLevel = selectedLevelIndex;
+  saveGameData();
+}
+
+function renderMedia(container, media, controls) {
+  container.replaceChildren();
+  if (!media || media.type === "none" || !media.src) return;
+
+  const fail = () => {
+    container.replaceChildren();
+    const message = document.createElement("p");
+    message.className = "media-error";
+    message.textContent = "This media could not be loaded. Check the URL or file path.";
+    container.append(message);
+  };
+
+  if (media.type === "image") {
+    const image = document.createElement("img");
+    image.src = media.src;
+    image.alt = "Question media";
+    image.addEventListener("error", fail, { once: true });
+    container.append(image);
+    return;
+  }
+
+  if (media.type === "video") {
+    const video = document.createElement("video");
+    video.src = media.src;
+    video.controls = true;
+    video.preload = "metadata";
+    video.addEventListener("error", fail, { once: true });
+    container.append(video);
+    return;
+  }
+
+  if (media.type === "audio") {
+    const audio = document.createElement("audio");
+    audio.src = media.src;
+    audio.preload = "metadata";
+    audio.addEventListener("error", fail, { once: true });
+
+    if (!controls) {
+      audio.controls = true;
+      audio.className = "editor-audio";
+      container.append(audio);
+      return;
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "audio-player";
+
+    const playButton = document.createElement("button");
+    playButton.type = "button";
+    playButton.className = "audio-play-button";
+    playButton.setAttribute("aria-label", "Play sound");
+    playButton.title = "Play sound";
+    playButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm12.5 3a3.5 3.5 0 0 0-2-3.16v6.32A3.5 3.5 0 0 0 15.5 12zm-2-7.53v2.06A6 6 0 0 1 17.5 12a6 6 0 0 1-4 5.47v2.06A8 8 0 0 0 19.5 12a8 8 0 0 0-6-7.53z"/></svg>`;
+
+    playButton.addEventListener("click", async () => {
+      try {
+        if (audio.paused) {
+          await audio.play();
+        } else {
+          audio.pause();
+        }
+      } catch (error) {
+        fail();
+      }
+    });
+
+    audio.addEventListener("play", () => {
+      playButton.classList.add("is-playing");
+      playButton.setAttribute("aria-label", "Pause sound");
+      playButton.title = "Pause sound";
+    });
+    audio.addEventListener("pause", () => {
+      playButton.classList.remove("is-playing");
+      playButton.setAttribute("aria-label", "Play sound");
+      playButton.title = "Play sound";
+    });
+    audio.addEventListener("ended", () => {
+      playButton.classList.remove("is-playing");
+      playButton.setAttribute("aria-label", "Play sound");
+      playButton.title = "Play sound";
+      audio.currentTime = 0;
+    });
+
+    wrapper.append(playButton, audio);
+    audio.className = "visually-hidden";
+    container.append(wrapper);
+    return;
+  }
+
+  if (media.type === "youtube") {
+    const embedUrl = toYouTubeEmbedUrl(media.src);
+    if (!embedUrl) {
+      fail();
+      return;
+    }
+    const iframe = document.createElement("iframe");
+    iframe.src = embedUrl;
+    iframe.title = "Question video";
+    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+    iframe.allowFullscreen = true;
+    container.append(iframe);
+  }
+}
+
+function toYouTubeEmbedUrl(url) {
+  try {
+    const parsed = new URL(url);
+    let videoId = "";
+
+    if (parsed.hostname.includes("youtu.be")) {
+      videoId = parsed.pathname.slice(1).split("/")[0];
+    } else if (parsed.hostname.includes("youtube.com")) {
+      if (parsed.pathname.startsWith("/shorts/")) {
+        videoId = parsed.pathname.split("/")[2] || "";
+      } else if (parsed.pathname.startsWith("/embed/")) {
+        videoId = parsed.pathname.split("/")[2] || "";
+      } else {
+        videoId = parsed.searchParams.get("v") || "";
+      }
+    }
+
+    return /^[a-zA-Z0-9_-]{6,}$/.test(videoId)
+      ? `https://www.youtube-nocookie.com/embed/${videoId}`
+      : "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function toggleAnswer() {
+  const isHidden = elements.answerPanel.classList.toggle("hidden");
+  elements.showAnswerButton.textContent = isHidden ? "Show Answer" : "Hide Answer";
+}
+
+function advanceOrFinishQuestion() {
+  const question = getSelectedQuestion();
+
+  if (selectedLevelIndex < LEVELS_PER_QUESTION - 1) {
+    changeLevel(selectedLevelIndex + 1);
+    return;
+  }
+
+  question.completed = true;
+  question.currentLevel = LEVELS_PER_QUESTION - 1;
+  saveGameData();
+  closeQuestion();
+  showToast("Question completed!");
+}
+
+function resetProgress() {
+  const confirmed = window.confirm("Reset every completed tile and return all questions to Level 1? Your written questions will stay saved.");
+  if (!confirmed) return;
+
+  gameData.categories.forEach((category) => {
+    category.questions.forEach((question) => {
+      question.completed = false;
+      question.currentLevel = 0;
+    });
+  });
+
+  saveGameData();
+  renderBoard();
+  showToast("Game progress reset. All questions are available again.");
+}
+
+function exportGame() {
+  if (currentMode === "edit") saveCurrentEditorFields();
+
+  const blob = new Blob([JSON.stringify(gameData, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "game-data.json";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast("Downloaded game-data.json. Replace the file in your GitHub repository to publish your questions.");
+}
+
+function importGame(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    try {
+      const incoming = JSON.parse(String(reader.result));
+      gameData = normalizeGameData(incoming);
+      saveGameData();
+      renderBoard();
+      showToast("Game imported successfully.");
+    } catch (error) {
+      showToast("That file is not a valid Level Jeopardy game file.");
+    } finally {
+      event.target.value = "";
+    }
+  });
+  reader.addEventListener("error", () => {
+    showToast("The game file could not be read.");
+    event.target.value = "";
+  });
+  reader.readAsText(file);
+}
+
+function showToast(message) {
+  window.clearTimeout(toastTimer);
+  elements.toast.textContent = message;
+  elements.toast.classList.add("visible");
+  toastTimer = window.setTimeout(() => elements.toast.classList.remove("visible"), 3600);
+}
+
+function startMusic() {
+  if (audioContext || isMuted) return;
+
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) {
+    elements.muteButton.textContent = "Music Unavailable";
+    elements.muteButton.title = "Background music is not supported in this browser";
+    return;
+  }
+
+  audioContext = new AudioContextClass();
+  masterGain = audioContext.createGain();
+  masterGain.gain.value = 0.08;
+  masterGain.connect(audioContext.destination);
+
+  const notes = [
+    293.66, 369.99, 440.0, 554.37,
+    493.88, 440.0, 369.99, 329.63,
+    293.66, 349.23, 440.0, 493.88,
+    440.0, 369.99, 329.63, 246.94
+  ];
+
+  const playStep = () => {
+    if (!audioContext || !masterGain || isMuted) return;
+
+    const now = audioContext.currentTime;
+    const oscillator = audioContext.createOscillator();
+    const noteGain = audioContext.createGain();
+
+    oscillator.type = musicStep % 4 === 0 ? "triangle" : "sine";
+    oscillator.frequency.value = notes[musicStep % notes.length];
+    noteGain.gain.setValueAtTime(0.0001, now);
+    noteGain.gain.exponentialRampToValueAtTime(0.32, now + 0.015);
+    noteGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.26);
+
+    oscillator.connect(noteGain);
+    noteGain.connect(masterGain);
+    oscillator.start(now);
+    oscillator.stop(now + 0.28);
+
+    if (musicStep % 4 === 0) {
+      const bass = audioContext.createOscillator();
+      const bassGain = audioContext.createGain();
+      bass.type = "sine";
+      bass.frequency.value = notes[musicStep % notes.length] / 2;
+      bassGain.gain.setValueAtTime(0.0001, now);
+      bassGain.gain.exponentialRampToValueAtTime(0.14, now + 0.02);
+      bassGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
+      bass.connect(bassGain);
+      bassGain.connect(masterGain);
+      bass.start(now);
+      bass.stop(now + 0.4);
+    }
+
+    musicStep += 1;
+  };
+
+  playStep();
+  musicTimer = window.setInterval(playStep, 430);
+}
+
+function stopMusic() {
+  if (musicTimer) window.clearInterval(musicTimer);
+  musicTimer = null;
+
+  if (audioContext) {
+    audioContext.close().catch(() => {});
+  }
+
+  audioContext = null;
+  masterGain = null;
+}
+
+function toggleMute() {
+  isMuted = !isMuted;
+  elements.muteButton.textContent = isMuted ? "Unmute Music" : "Mute Music";
+  elements.muteButton.title = isMuted ? "Unmute music" : "Mute music";
+  elements.muteButton.setAttribute("aria-label", elements.muteButton.title);
+
+  if (isMuted) {
+    stopMusic();
+  } else {
+    startMusic();
+  }
+}
+
+function bindEvents() {
+  elements.menuButton.addEventListener("click", openMenu);
+  elements.menuCloseButton.addEventListener("click", closeMenu);
+  elements.menuBackdrop.addEventListener("click", closeMenu);
+  elements.completeModeButton.addEventListener("click", () => setMode("play"));
+  elements.editModeButton.addEventListener("click", () => setMode("edit"));
+  elements.saveGameButton.addEventListener("click", () => {
+    if (currentMode === "edit" && !elements.questionModal.classList.contains("hidden")) {
+      saveCurrentEditorFields();
+    }
+    saveGameData({ toast: true });
+    closeMenu();
+  });
+
+  elements.modalClose.addEventListener("click", closeQuestion);
+  elements.questionModal.addEventListener("click", (event) => {
+    if (event.target === elements.questionModal) closeQuestion();
+  });
+
+  elements.previousLevelButton.addEventListener("click", () => changeLevel(selectedLevelIndex - 1));
+  elements.nextLevelButton.addEventListener("click", () => changeLevel(selectedLevelIndex + 1));
+
+  [elements.questionInput, elements.answerInput, elements.mediaUrlInput].forEach((input) => {
+    input.addEventListener("input", handleEditorInput);
+  });
+  elements.mediaTypeInput.addEventListener("change", handleEditorInput);
+  elements.mediaUploadInput.addEventListener("change", handleMediaUpload);
+  elements.saveLevelButton.addEventListener("click", () => saveCurrentEditorFields({ toast: true }));
+  elements.clearLevelButton.addEventListener("click", clearCurrentLevel);
+
+  elements.showAnswerButton.addEventListener("click", toggleAnswer);
+  elements.finishQuestionButton.addEventListener("click", advanceOrFinishQuestion);
+
+  elements.exportButton.addEventListener("click", exportGame);
+  elements.importInput.addEventListener("change", importGame);
+  elements.resetProgressButton.addEventListener("click", resetProgress);
+  elements.muteButton.addEventListener("click", toggleMute);
+  elements.addTeamButton.addEventListener("click", addTeam);
+  elements.removeTeamButton.addEventListener("click", removeTeam);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      if (!elements.questionModal.classList.contains("hidden")) {
+        closeQuestion();
+      } else if (!elements.controlMenu.classList.contains("hidden")) {
+        closeMenu();
+      }
+    }
+
+    if (elements.questionModal.classList.contains("hidden")) return;
+
+    if (event.key === "ArrowLeft" && selectedLevelIndex > 0 && event.target.tagName !== "TEXTAREA" && event.target.tagName !== "INPUT") {
+      changeLevel(selectedLevelIndex - 1);
+    }
+
+    if (event.key === "ArrowRight" && selectedLevelIndex < LEVELS_PER_QUESTION - 1 && event.target.tagName !== "TEXTAREA" && event.target.tagName !== "INPUT") {
+      changeLevel(selectedLevelIndex + 1);
+    }
+  });
+}
+
+async function initialize() {
+  bindEvents();
+  await loadGameData();
+
+  currentMode = "play";
+  localStorage.setItem(MODE_KEY, currentMode);
+  elements.body.dataset.mode = currentMode;
+  elements.modePill.textContent = "Play mode";
+  renderBoard();
+  loadTeams();
+
+  document.addEventListener("pointerdown", () => startMusic(), { once: true });
+}
+
+initialize();
+
+  </script>
+</body>
+</html>
